@@ -128,3 +128,17 @@ def test_init_db_command(tmp_path):
     assert exit_code == 0
     engine = get_engine(f"sqlite:///{db_path.as_posix()}")
     assert database_summary(engine)["experiments"] == 0
+
+
+def test_invalid_validation_config_returns_usage_error():
+    exit_code = main(
+        [
+            "process",
+            "--angle-min",
+            "10",
+            "--angle-max",
+            "10",
+            "--skip-db",
+        ]
+    )
+    assert exit_code == 2
