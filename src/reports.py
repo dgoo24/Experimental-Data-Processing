@@ -186,6 +186,8 @@ def write_summary_markdown(
     path = _prepare(path)
     quality = build_quality_report(validated)
 
+    validation_config = validated.attrs.get("validation_config", {})
+
     lines = [
         "# Experimental data processing summary",
         "",
@@ -198,13 +200,25 @@ def write_summary_markdown(
         f"- Rejected rows (invalid or duplicate): {int(validated['status'].ne('valid').sum())}",
         f"- Analysis groups (experiment/sample): {len(bundle.descriptive)}",
         f"- Regressions computed: {len(bundle.regressions)}",
+    ]
+
+    if validation_config:
+        lines += [
+            f"- Accepted measurement angle: "
+            f"{validation_config['angle_min']:g} to {validation_config['angle_max']:g} deg",
+            f"- Accepted observed rotation: "
+            f"{validation_config['rotation_min']:g} to {validation_config['rotation_max']:g} deg",
+        ]
+
+    lines += [
         "",
         "## Data quality",
         "",
         _markdown_table(quality),
         "",
-        "Rejected rows are listed in `quality_issues.csv`; they are retained in the",
-        "database's `raw_measurements` table with their validation status.",
+        "Rejected rows are listed in `quality_issues.csv`; they remain in the",
+        "original input and, when the database step runs, in `raw_measurements`",
+        "with their validation status.",
         "",
     ]
 

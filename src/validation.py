@@ -242,6 +242,13 @@ def validate_measurements(
     result["validation_errors"] = _error_messages(result, config)
     result["experiment_id_value"] = experiment_stripped
     result["sample_id_value"] = sample_stripped
+    result.attrs["validation_config"] = {
+        "angle_min": config.angle_min,
+        "angle_max": config.angle_max,
+        "rotation_min": config.rotation_min,
+        "rotation_max": config.rotation_max,
+        "max_id_length": config.max_id_length,
+    }
     return result
 
 
