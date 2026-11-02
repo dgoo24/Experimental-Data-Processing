@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">Experimental Data Processing</title>
+  <desc id="desc">Banner für ein Werkzeug zur Verarbeitung und statistischen Analyse optischer Polarisationsmessungen.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08111f"/>
+      <stop offset="55%" stop-color="#0d1b2e"/>
+      <stop offset="100%" stop-color="#102a43"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e3a5f" stroke-width="1"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <rect width="1200" height="300" fill="url(#grid)" opacity="0.45"/>
+  <circle cx="1130" cy="20" r="190" fill="#2563eb" opacity="0.12"/>
+  <circle cx="760" cy="310" r="150" fill="#38bdf8" opacity="0.06"/>
+
+  <text x="64" y="64" fill="#7dd3fc" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="3">UNIVERSITY PHYSICS LAB · INTERNAL TOOL</text>
+  <text x="64" y="128" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="50" font-weight="700">Experimental Data Processing</text>
+  <text x="64" y="166" fill="#a9bfd6" font-family="Segoe UI, Arial, sans-serif" font-size="20">Optische Polarimetrie — vom Mess-CSV zum reproduzierbaren Report.</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="600">
+    <rect x="64" y="198" width="64" height="30" rx="15" fill="#0c4a6e" stroke="#0ea5e9" stroke-opacity="0.45"/>
+    <text x="96" y="218" fill="#bae6fd" text-anchor="middle">CSV</text>
+
+    <rect x="140" y="198" width="112" height="30" rx="15" fill="#1e293b" stroke="#64748b" stroke-opacity="0.5"/>
+    <text x="196" y="218" fill="#dbeafe" text-anchor="middle">Validierung</text>
+
+    <rect x="264" y="198" width="120" height="30" rx="15" fill="#1e293b" stroke="#64748b" stroke-opacity="0.5"/>
+    <text x="324" y="218" fill="#dbeafe" text-anchor="middle">PostgreSQL</text>
+
+    <rect x="396" y="198" width="112" height="30" rx="15" fill="#1e293b" stroke="#64748b" stroke-opacity="0.5"/>
+    <text x="452" y="218" fill="#dbeafe" text-anchor="middle">Regression</text>
+
+    <rect x="520" y="198" width="112" height="30" rx="15" fill="#1e293b" stroke="#64748b" stroke-opacity="0.5"/>
+    <text x="576" y="218" fill="#dbeafe" text-anchor="middle">Matplotlib</text>
+
+    <rect x="644" y="198" width="76" height="30" rx="15" fill="#1e293b" stroke="#64748b" stroke-opacity="0.5"/>
+    <text x="682" y="218" fill="#dbeafe" text-anchor="middle">pytest</text>
+  </g>
+
+  <g transform="translate(820 48)">
+    <rect x="0" y="0" width="316" height="204" rx="18" fill="#07101d" fill-opacity="0.72" stroke="#1e40af" stroke-opacity="0.45"/>
+    <line x1="40" y1="164" x2="286" y2="164" stroke="#334155" stroke-width="1"/>
+    <line x1="40" y1="164" x2="40" y2="28" stroke="#334155" stroke-width="1"/>
+    <line x1="40" y1="164" x2="286" y2="52" stroke="url(#accent)" stroke-width="2.5" filter="url(#glow)" opacity="0.85"/>
+
+    <g fill="#38bdf8">
+      <circle cx="54" cy="155" r="4"/>
+      <circle cx="82" cy="143" r="4"/>
+      <circle cx="110" cy="130" r="4"/>
+      <circle cx="138" cy="118" r="4"/>
+      <circle cx="166" cy="106" r="4"/>
+      <circle cx="194" cy="94" r="4"/>
+      <circle cx="222" cy="82" r="4"/>
+      <circle cx="250" cy="68" r="4"/>
+      <circle cx="278" cy="57" r="4"/>
+    </g>
+
+    <text x="40" y="22" fill="#94a3b8" font-family="Segoe UI, Arial, sans-serif" font-size="12" letter-spacing="1.5">BEISPIELDATEN · OLS</text>
+    <text x="252" y="22" fill="#7dd3fc" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="end">R² 0.9998</text>
+    <text x="163" y="190" fill="#64748b" font-family="Segoe UI, Arial, sans-serif" font-size="11" text-anchor="middle">Messwinkel → Rotation</text>
+  </g>
+</svg>

@@ -1,42 +1,121 @@
-# Experimental Data Processing and Analysis Tool
+<div align="center">
 
-A small Python application for a university physics laboratory working with
-optical polarization measurements. It replaces manual spreadsheet cleaning with
-one reproducible command:
+<img src="docs/images/banner.svg" alt="Experimental Data Processing – Banner" width="100%">
 
-```text
-CSV files -> validation/cleaning -> PostgreSQL -> statistics -> plots/reports
+<br>
+
+<img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11+">
+<img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16">
+<img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
+<img src="https://img.shields.io/badge/Tests-47%20bestanden-success" alt="47 Tests bestanden">
+<img src="https://img.shields.io/badge/Status-einsatzbereit-success" alt="Status einsatzbereit">
+
+<h3>Kleine, reproduzierbare Datenpipeline für optische Polarisationsmessungen</h3>
+
+<p>
+Vom Mess-CSV über Validierung und PostgreSQL bis zu Regression, Plots und Bericht –
+mit einem einzigen Befehl.
+</p>
+
+<p>
+<a href="#schnellstart">Schnellstart</a> ·
+<a href="#csv-format">CSV-Format</a> ·
+<a href="#statistik">Statistik</a> ·
+<a href="#datenbank">Datenbank</a> ·
+<a href="#ausgaben">Ausgaben</a>
+</p>
+
+</div>
+
+---
+
+> **Kurz gesagt:** Das Programm liest alle CSV-Dateien aus `data/raw`, prüft und
+> bereinigt die Messwerte, speichert Roh- und Prozessdaten in PostgreSQL, führt
+> pro Experiment/Probe eine lineare Regression durch und erzeugt PNG-Plots,
+> CSV-Tabellen sowie einen lesbaren Markdown-Bericht.
+
+> [!IMPORTANT]
+> Die mitgelieferten CSV-Dateien in `data/raw` und die Screenshots in diesem
+> README stammen aus **synthetischen Beispieldaten**. Sie sind keine echten
+> Labormessungen. Vor dem Einsatz mit Forschungsdaten müssen sie ersetzt werden.
+
+## Überblick
+
+Dieses Projekt ist bewusst als **kleines internes Werkzeug** geschnitten – nicht
+als Plattform. Es gibt keine Weboberfläche, keinen Scheduler, keine Microservices
+und keine zusätzliche Infrastruktur. Ein Forschungsteam kann Messdateien in einen
+Ordner legen, einen Befehl ausführen und erhält nachvollziehbare Ergebnisse.
+
+| Eigenschaft | Umsetzung |
+| --- | --- |
+| Eingabe | Eine oder mehrere CSV-Dateien in `data/raw` |
+| Validierung | Fehlende Werte, Zahlenfehler, Wertebereiche, Zeitstempel, Duplikate |
+| Speicherung | PostgreSQL mit Roh-, Prozess- und Regressionsdaten |
+| Analyse | Deskriptive Statistik und OLS-Regression mit SciPy/NumPy |
+| Ausgabe | PNG-Plots, CSV-Tabellen, `summary.md` |
+| Schnittstelle | Kommandozeile (CLI) |
+| Tests | 47 pytest-Tests, inklusive synthetischer Regressionen mit bekannten Ergebnissen |
+| Betrieb | Python lokal, PostgreSQL ausschließlich per Docker Compose |
+
+## Workflow
+
+```mermaid
+flowchart LR
+    A[CSV-Dateien<br/>data/raw] --> B[Ingestion]
+    B --> C[Validierung]
+    C -->|gültig| D[Cleaning]
+    C -->|ungültig / Duplikat| Q[Quality Report<br/>Quarantäne]
+    D --> E[(PostgreSQL)]
+    D --> F[Statistik<br/>OLS-Regression]
+    E --> G[Historie / SQL]
+    F --> H[PNG-Plots<br/>CSV-Tabellen<br/>summary.md]
+
+    style A fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style C fill:#1e293b,stroke:#64748b,color:#e2e8f0
+    style Q fill:#451a03,stroke:#f59e0b,color:#fef3c7
+    style E fill:#172554,stroke:#4169e1,color:#dbeafe
+    style H fill:#14532d,stroke:#22c55e,color:#dcfce7
 ```
 
-The project is intentionally small: a command-line interface, one PostgreSQL
-container, a handful of Python modules and a pytest suite. There is no web
-framework, task scheduler, message broker, or containerized Python service.
+## Funktionen
 
-> **Synthetic example data:** the CSVs in `data/raw` and the generated outputs
-> in `output/` are synthetic examples created for demonstration and testing.
-> They are not real laboratory measurements. Replace them with real files before
-> using the tool for research.
+- **Mehrere Dateien und Experimente** in einem Lauf.
+- **Keine stillen Datenverluste:** ungültige Zeilen bleiben in der Datenbank und
+  im Quality Report erhalten.
+- **Idempotente Importe:** unveränderte Dateien werden über ihren SHA-256-Wert
+  erkannt; bereits gespeicherte Messpunkte werden nicht doppelt angelegt.
+- **Nachvollziehbare Rohdaten:** die ursprünglichen Textwerte werden getrennt von
+  den bereinigten Zahlen gespeichert.
+- **Eine Regression pro Experiment/Probe** mit Steigung, Achsenabschnitt,
+  R², Standardfehlern und Residuen.
+- **Deskriptiver Experimentvergleich** ohne voreilige Signifikanzaussagen.
+- **Automatische Berichte** als PNG, CSV und Markdown.
+- **Historie und SQL-Zugriff** auf alle gespeicherten Ergebnisse.
 
-## Contents
+## Screenshots
 
-- [Quick start](#quick-start)
-- [Input CSV format](#input-csv-format)
-- [Validation and cleaning](#validation-and-cleaning)
-- [Statistical model and assumptions](#statistical-model-and-assumptions)
-- [Database](#database)
-- [Outputs](#outputs)
-- [SQL queries](#sql-queries)
-- [Testing](#testing)
-- [Project structure](#project-structure)
-- [Design decisions and limitations](#design-decisions-and-limitations)
-- [Troubleshooting](#troubleshooting)
+<p align="center">
+  <img src="docs/images/rotation_vs_angle.png" alt="Beobachtete Rotation gegen Messwinkel mit Regressionsgeraden" width="49%">
+  <img src="docs/images/regression_residuals.png" alt="Residuenplot der linearen Regression" width="49%">
+</p>
 
-## Quick start
+<p align="center">
+  <img src="docs/images/rotation_histogram.png" alt="Histogramm der beobachteten Rotation" width="62%">
+</p>
 
-Requirements: Python 3.11+, Docker with Compose, and Git (optional but
-recommended).
+<p align="center">
+  <em>Synthetische Beispieldaten: drei Experiment/Probe-Gruppen mit je zehn Messpunkten.</em>
+</p>
 
-### Windows PowerShell
+## Schnellstart
+
+### Voraussetzungen
+
+- Python **3.11 oder neuer**
+- Docker mit Docker Compose
+- Git (optional, aber empfohlen)
+
+### Windows (PowerShell)
 
 ```powershell
 cd experimental-data-tool
@@ -46,7 +125,6 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 
 docker compose up -d db
-
 python -m src.main process
 ```
 
@@ -60,209 +138,296 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 
 docker compose up -d db
-
 python -m src.main process
 ```
 
-`process` creates the tables if needed, reads every `*.csv` in `data/raw`,
-validates and cleans the rows, stores raw and processed measurements, computes
-regressions, and writes plots and reports.
+### Was passiert bei `process`?
 
-Useful commands:
+1. Alle `*.csv`-Dateien aus `data/raw` werden gelesen.
+2. Jede Zeile wird validiert und als `valid`, `invalid` oder `duplicate` markiert.
+3. Rohdaten und bereinigte Messwerte werden in PostgreSQL gespeichert.
+4. Pro Experiment/Probe wird eine OLS-Regression berechnet.
+5. Plots, Tabellen und `summary.md` werden geschrieben.
+
+Die Datenbanktabellen werden bei Bedarf automatisch angelegt. Ein separates
+`init-db` ist optional:
 
 ```bash
-# Optional explicit table creation
 python -m src.main init-db
+```
 
-# Process without PostgreSQL (validation and local reports only)
+### Nützliche Befehle
+
+```bash
+# Nur lokal validieren und Berichte erzeugen, ohne PostgreSQL
 python -m src.main process --skip-db
 
-# Show stored history and regression results
+# Anderes Eingabeverzeichnis verwenden
+python -m src.main process --input "C:\Messdaten\Polarisation"
+
+# Gespeicherte Historie anzeigen
 python -m src.main history
 python -m src.main history --experiment EXP-001
 
-# Run the tests (SQLite in-memory; no PostgreSQL needed)
+# Tests ausführen
 python -m pytest
 
-# Stop PostgreSQL; the named Docker volume keeps the data
+# PostgreSQL stoppen; das Docker-Volume bleibt erhalten
 docker compose down
 ```
 
-The default database URL is:
+## CSV-Format
 
-```text
-postgresql+psycopg://lab_user:lab_password@127.0.0.1:5434/experimental_data
-```
+Jede Datei muss UTF-8-kodiert sein, eine Kopfzeile besitzen und die folgenden
+fünf Spalten enthalten. Die Spaltennamen sind **kleingeschrieben und
+case-sensitiv**.
 
-Override it with `--database-url` or the `DATABASE_URL` environment variable.
-`.env.example` documents the variable, but the application does **not** load
-`.env` files automatically; export the value in your shell or set it in your
-IDE.
-
-## Input CSV format
-
-Place one or more UTF-8 CSV files in `data/raw`. Every file must have a header
-row and these five required columns (names are case-sensitive):
-
-| Column | Type | Unit | Meaning |
+| Spalte | Typ | Einheit | Bedeutung |
 | --- | --- | --- | --- |
-| `experiment_id` | text | - | Experiment identifier, max 64 characters, e.g. `EXP-001` |
-| `sample_id` | text | - | Sample identifier within the experiment, max 64 characters |
-| `measurement_angle` | number | degrees | Analyzer/polarizer angle relative to the chosen zero reference |
-| `observed_rotation` | number | degrees | Measured rotation of the polarization plane |
-| `measurement_timestamp` | ISO-8601 text | - | Time of the measurement; normalized to UTC |
+| `experiment_id` | Text | – | Experimentkennung, maximal 64 Zeichen, z. B. `EXP-001` |
+| `sample_id` | Text | – | Probenkennung innerhalb des Experiments, maximal 64 Zeichen |
+| `measurement_angle` | Zahl | Grad | Winkel des Analysators/Polarisators relativ zur Nullreferenz |
+| `observed_rotation` | Zahl | Grad | Gemessene Drehung der Polarisationsebene |
+| `measurement_timestamp` | ISO-8601 | – | Messzeitpunkt; wird nach UTC normalisiert |
 
-Example:
+Beispiel:
 
 ```csv
 experiment_id,sample_id,measurement_angle,observed_rotation,measurement_timestamp
 EXP-001,S-01,0,1.2,2026-05-12T08:00:00Z
 EXP-001,S-01,10,9.4,2026-05-12T08:01:00Z
+EXP-001,S-01,20,17.1,2026-05-12T08:02:00Z
 ```
 
-Format assumptions:
+### Formatannahmen
 
-- One row is one measurement.
-- Decimal separator is `.` (not `,`).
-- Timestamps are ISO-8601. Values with an offset are converted to UTC; values
-  without an offset are interpreted as UTC. The database stores timezone-naive
-  UTC timestamps.
-- Blank numeric or text fields are invalid; they are not treated as zero.
-- Extra columns are accepted for the current run and ignored by the database.
-  The original file remains the authoritative source.
-- A measurement is a duplicate when experiment, sample, angle and timestamp all
-  match. Repetitions at the same angle with different timestamps are allowed.
-- Files are never modified or deleted. A file is read again only when its
-  SHA-256 checksum changes; an unchanged file is skipped on re-import.
+- Eine Zeile entspricht einer Messung.
+- Dezimaltrennzeichen ist der Punkt (`.`), nicht das Komma.
+- Zeitstempel sind ISO-8601. Werte mit Offset werden nach UTC umgerechnet;
+  Werte ohne Offset werden als UTC interpretiert.
+- Leere Zahlen- oder Textfelder sind ungültig und werden nicht als Null behandelt.
+- Zusätzliche Spalten sind erlaubt, werden aber nicht in die Datenbank übernommen.
+  Die Originaldatei bleibt die maßgebliche Quelle.
+- Ein Duplikat liegt vor, wenn `experiment_id`, `sample_id`,
+  `measurement_angle` und `measurement_timestamp` exakt übereinstimmen.
+  Wiederholungen am selben Winkel mit anderem Zeitstempel sind erlaubt.
+- Dateien werden niemals verändert oder gelöscht.
 
-## Validation and cleaning
+## Validierung und Cleaning
 
-Validation happens before any statistical calculation. Every row receives one
-of three statuses:
+Jede Zeile erhält genau einen Status:
 
-- `valid` - used for analysis;
-- `invalid` - missing value, non-numeric/non-finite number, out-of-range value,
-  unparseable timestamp, or over-long identifier;
-- `duplicate` - same experiment/sample/angle/timestamp as an earlier row.
-
-If a row is both a duplicate and otherwise invalid, it is marked `invalid`; the
-duplicate flag is still recorded in the quality report.
-
-Default acceptance ranges (configurable from the command line):
-
-| Quantity | Default range |
+| Status | Bedeutung |
 | --- | --- |
-| `measurement_angle` | -360 to 360 deg |
-| `observed_rotation` | -180 to 180 deg |
+| `valid` | Wird für Analyse und Regression verwendet |
+| `invalid` | Fehlender Wert, keine endliche Zahl, außerhalb des Bereichs, ungültiger Zeitstempel oder zu lange Kennung |
+| `duplicate` | Gleicher Messpunkt wie eine frühere Zeile |
+
+Wenn eine Zeile sowohl dupliziert als auch anderweitig ungültig ist, wird sie als
+`invalid` geführt; das Duplikat-Merkmal bleibt im Quality Report sichtbar.
+
+### Standardbereiche
+
+| Größe | Standardbereich |
+| --- | --- |
+| `measurement_angle` | −360 bis 360 Grad |
+| `observed_rotation` | −180 bis 180 Grad |
+
+Die Bereiche sind Qualitätsgrenzen, keine physikalischen Konstanten. Sie können
+pro Lauf angepasst werden:
 
 ```bash
-python -m src.main process --angle-min -90 --angle-max 90 \
+python -m src.main process \
+  --angle-min -90 --angle-max 90 \
   --rotation-min -45 --rotation-max 45
 ```
 
-Invalid and duplicate rows are **not silently deleted**:
+Ungültige und duplizierte Zeilen werden **nicht stillschweigend gelöscht**:
 
-- they remain in the `raw_measurements` table with their status and reason;
-- they are listed in `output/reports/quality_issues.csv`;
-- per-file counts appear in `output/reports/data_quality_report.csv` and
-  `output/reports/summary.md`;
-- only `valid` rows enter `processed_measurements` and the analysis.
+- Sie bleiben in `raw_measurements` mit Status und Begründung erhalten.
+- Sie stehen in `output/reports/quality_issues.csv`.
+- Die Zählungen pro Datei stehen in `data_quality_report.csv` und `summary.md`.
+- Nur `valid`-Zeilen gelangen in `processed_measurements` und in die Statistik.
 
-Rows with missing values are also inventoried in the original source CSV. The
-`raw_measurements` table stores the original text, not just the parsed number.
+## Statistik
 
-## Statistical model and assumptions
-
-For each `(experiment_id, sample_id)` group, the application fits an ordinary
-least-squares line:
+Für jede Kombination aus Experiment und Probe wird eine gewöhnliche
+Kleinste-Quadrate-Regression (OLS) berechnet:
 
 ```text
-observed_rotation = slope * measurement_angle + intercept
+observed_rotation = slope · measurement_angle + intercept
 ```
 
-- Both variables are in degrees. The slope has units of degree/degree; the
-  intercept is in degrees.
-- The fit is unweighted because the CSV format has no per-point uncertainty.
-- Standard errors for slope/intercept and the residual standard error are
-  reported when at least three points are available. With only two points, the
-  line is determined exactly and the standard errors are `NaN`/not stored.
-- R-squared is computed as the square of the Pearson correlation. It describes
-  goodness of fit and is not evidence of a physical model.
-- Assumptions: approximately linear relationship over the measured range,
-  independent errors and roughly constant error variance. Residual plots are
-  provided so these assumptions can be checked visually.
-- The experiment comparison is descriptive (mean slope/intercept per
-  experiment). It is deliberately not a significance test.
+- Beide Größen sind in Grad. Die Steigung hat die Einheit Grad/Grad, der
+  Achsenabschnitt die Einheit Grad.
+- Die Regression ist ungewichtet, weil das CSV-Format keine Unsicherheit pro
+  Messpunkt enthält.
+- Standardfehler für Steigung und Achsenabschnitt sowie der Residualstandardfehler
+  werden ab drei Messpunkten berichtet. Bei genau zwei Punkten ist die Gerade
+  exakt bestimmt; Standardfehler werden dann als `NaN`/`NULL` geführt.
+- R² ist ein Gütemaß der Anpassung und kein Beweis für ein physikalisches Modell.
+- Annahmen: annähernd linearer Zusammenhang im Messbereich, unabhängige Fehler
+  und näherungsweise konstante Fehlervarianz. Die Residuenplots dienen der
+  visuellen Prüfung.
+- Der Experimentvergleich ist **deskriptiv** (mittlere Steigung, mittlerer
+  Achsenabschnitt). Es werden keine Signifikanztests zwischen Experimenten
+  behauptet.
 
-All statistical code is in `src/analysis.py` and operates only on DataFrames. It
-has no database dependency, which keeps it easy to test.
+### Beispielergebnisse (synthetisch)
 
-## Database
+| Experiment | Probe | n | Steigung | Achsenabschnitt | R² |
+| --- | --- | ---: | ---: | ---: | ---: |
+| EXP-001 | S-01 | 10 | 0.821455 | 0.834545 | 0.999762 |
+| EXP-001 | S-02 | 10 | 0.550121 | −0.965455 | 0.999918 |
+| EXP-002 | S-03 | 10 | 1.021939 | 0.392727 | 0.999932 |
 
-PostgreSQL stores six small tables:
+Diese Werte stammen aus den mitgelieferten Beispieldaten und dienen nur der
+Demonstration der Pipeline.
 
-| Table | Purpose |
+## Datenbank
+
+PostgreSQL speichert sechs kleine Tabellen mit Primärschlüsseln, Fremdschlüsseln,
+Unique- und Check-Constraints.
+
+```mermaid
+erDiagram
+    experiments ||--o{ samples : enthält
+    experiments ||--o{ processed_measurements : gruppiert
+    samples ||--o{ processed_measurements : liefert
+    imports ||--o{ raw_measurements : enthält
+    raw_measurements ||--o| processed_measurements : bereinigt_zu
+    experiments ||--o{ regression_results : besitzt
+    samples ||--o{ regression_results : erzeugt
+
+    experiments {
+        int id PK
+        string experiment_id UK
+        string title
+        timestamp created_at
+    }
+    samples {
+        int id PK
+        int experiment_id FK
+        string sample_id
+        timestamp created_at
+    }
+    imports {
+        int id PK
+        string source_file
+        string file_sha256 UK
+        timestamp imported_at
+        int n_rows
+        int n_valid
+        int n_invalid
+        int n_duplicates
+    }
+    raw_measurements {
+        int id PK
+        int import_id FK
+        int source_row
+        text experiment_id
+        text sample_id
+        text measurement_angle
+        text observed_rotation
+        text measurement_timestamp
+        string status
+        text validation_errors
+    }
+    processed_measurements {
+        int id PK
+        int raw_measurement_id FK
+        int experiment_id FK
+        int sample_id FK
+        float measurement_angle
+        float observed_rotation
+        timestamp measurement_timestamp
+    }
+    regression_results {
+        int id PK
+        int experiment_id FK
+        int sample_id FK
+        int n_points
+        float slope
+        float intercept
+        float r_squared
+        float slope_std_error
+        float intercept_std_error
+        float residual_std_error
+        timestamp computed_at
+    }
+```
+
+### Wiederholte Importe
+
+- **Gleicher Datei-Checksum:** Der Dateiimport wird übersprungen.
+- **Veränderte Datei:** Rohzeilen werden erneut protokolliert, bereits gespeicherte
+  Messpunkte aber nicht doppelt angelegt.
+- **Erneute Regression:** Ergebnisse werden pro Experiment/Probe aktualisiert,
+  nicht dupliziert.
+
+### Warum kein Alembic?
+
+Das Projekt startet mit einem kleinen, stabilen Schema. `Base.metadata.create_all`
+reicht dafür aus. Alembic wäre zusätzliche Komplexität ohne aktuellen Nutzen.
+Sobald echte Daten vorliegen und das Schema migriert werden muss, ist Alembic der
+richtige nächste Schritt.
+
+## Ausgaben
+
+```text
+data/processed/processed_measurements.csv   bereinigte Messwerte
+output/plots/rotation_vs_angle.png          Streudiagramm + Regressionsgeraden
+output/plots/regression_residuals.png       Residuen der Regression
+output/plots/rotation_histogram.png         Verteilung der Rotation
+output/reports/data_quality_report.csv      Qualitätszählungen pro Datei
+output/reports/quality_issues.csv           abgelehnte Zeilen mit Begründung
+output/reports/descriptive_statistics.csv   Statistik pro Experiment/Probe
+output/reports/regression_results.csv       Steigung, Achsenabschnitt, R², SE
+output/reports/residuals.csv                beobachtet / vorhergesagt / Residuum
+output/reports/experiment_comparison.csv    deskriptiver Experimentvergleich
+output/reports/summary.md                   lesbarer Gesamtbericht
+```
+
+Die Plots werden mit dem nicht-interaktiven `Agg`-Backend von Matplotlib erzeugt.
+Wenn keine gültigen Zeilen vorhanden sind, werden Tabellen und Quality Report
+trotzdem geschrieben; Plots werden übersprungen.
+
+## CLI-Referenz
+
+| Befehl | Zweck |
 | --- | --- |
-| `experiments` | Experiment code and metadata |
-| `samples` | Sample code, unique within an experiment |
-| `imports` | One row per imported file, with checksum and row counts |
-| `raw_measurements` | Original text values, validation status and reason |
-| `processed_measurements` | Clean numeric rows used for analysis |
-| `regression_results` | Latest slope/intercept/R-squared and standard errors |
+| `python -m src.main init-db` | Datenbanktabellen anlegen |
+| `python -m src.main process` | Vollständige Pipeline ausführen |
+| `python -m src.main process --skip-db` | Nur validieren und lokale Berichte erzeugen |
+| `python -m src.main process --input <dir>` | Anderes Eingabeverzeichnis verwenden |
+| `python -m src.main process --output <dir>` | Anderes Ausgabeverzeichnis verwenden |
+| `python -m src.main history` | Gespeicherte Messungen und Regressionen anzeigen |
+| `python -m src.main history --experiment EXP-001` | Historie auf ein Experiment begrenzen |
+| `python -m src.main process --angle-min ...` | Qualitätsgrenzen anpassen |
 
-Primary keys, foreign keys, unique constraints and basic check constraints are
-defined in `src/database.py`; `sql/schema.sql` is a reference PostgreSQL DDL
-file. The application creates tables with SQLAlchemy
-(`Base.metadata.create_all`), which is sufficient for this single-schema project.
-**Alembic was deliberately omitted**: there is no migration history yet. If the
-schema evolves after real data has been collected, add Alembic then rather than
-carrying migration machinery now.
-
-Re-import behavior:
-
-- same file checksum -> file-level import is skipped;
-- changed file -> raw rows are recorded again, but an already stored
-  experiment/sample/angle/timestamp point is not duplicated;
-- regression results are upserted per experiment/sample, so re-running does not
-  create duplicate rows.
-
-The old scaffold table `measurements` (if present in an existing local volume)
-is unused by this version. The new schema uses the tables listed above.
-
-## Outputs
-
-After `python -m src.main process`:
+Die Standard-Datenbank-URL lautet:
 
 ```text
-data/processed/processed_measurements.csv   clean measurements used for analysis
-output/plots/rotation_vs_angle.png          scatter plot + regression lines
-output/plots/regression_residuals.png       residual diagnostics
-output/plots/rotation_histogram.png         observed-rotation distribution
-output/reports/data_quality_report.csv      counts per input file
-output/reports/quality_issues.csv           every rejected row and reason
-output/reports/descriptive_statistics.csv   per experiment/sample statistics
-output/reports/regression_results.csv       slope, intercept, R-squared, SEs
-output/reports/residuals.csv                observed/predicted/residual rows
-output/reports/experiment_comparison.csv    descriptive comparison
-output/reports/summary.md                   human-readable run summary
+postgresql+psycopg://lab_user:lab_password@127.0.0.1:5434/experimental_data
 ```
 
-All plots are PNG files written with Matplotlib's non-interactive `Agg` backend.
-If there are no valid rows, tables and the quality report are still produced;
-plots are skipped.
+Sie kann über `--database-url` oder die Umgebungsvariable `DATABASE_URL`
+überschrieben werden.
 
-## SQL queries
+## SQL-Abfragen
 
-Ready-to-run PostgreSQL queries live in `sql/queries/`:
+Die Dateien in `sql/queries/` sind direkt für PostgreSQL gedacht:
 
-- `measurements_by_experiment.sql`
-- `average_rotation_by_sample.sql`
-- `sample_comparison.sql`
-- `regression_results.sql`
-- `data_quality_summary.sql`
-- `experiment_comparison.sql`
+| Datei | Inhalt |
+| --- | --- |
+| `measurements_by_experiment.sql` | Messungen eines Experiments |
+| `average_rotation_by_sample.sql` | Mittelwerte und Streuung pro Probe |
+| `sample_comparison.sql` | Vergleich der Proben anhand der Regression |
+| `regression_results.sql` | Gespeicherte Regressionsergebnisse |
+| `data_quality_summary.sql` | Qualitätsübersicht pro Import |
+| `experiment_comparison.sql` | Deskriptiver Vergleich der Experimente |
 
-The first query uses a psql variable. Example on PowerShell:
+Beispiel unter PowerShell:
 
 ```powershell
 Get-Content -Raw sql\queries\measurements_by_experiment.sql |
@@ -270,7 +435,7 @@ Get-Content -Raw sql\queries\measurements_by_experiment.sql |
     -v experiment_id=EXP-001 -f -
 ```
 
-On Linux/macOS:
+Unter Linux/macOS:
 
 ```bash
 docker exec -i experimental_data_db psql -U lab_user -d experimental_data \
@@ -278,55 +443,61 @@ docker exec -i experimental_data_db psql -U lab_user -d experimental_data \
   < sql/queries/measurements_by_experiment.sql
 ```
 
-## Testing
+`sql/schema.sql` ist eine lesbare PostgreSQL-Referenz. Die Anwendung erzeugt die
+Tabellen selbst über SQLAlchemy.
 
-The automated suite uses pytest and an in-memory SQLite database. This keeps the
-tests fast and portable while exercising the same SQLAlchemy models and queries.
-The PostgreSQL-specific schema and the full workflow were also smoke-tested
-against PostgreSQL 16 in Docker during development.
+## Tests
 
 ```bash
 python -m pytest
 ```
 
-Coverage includes:
+Aktueller Stand:
 
-- CSV parsing, required/duplicate headers, multiple files, checksums;
-- every validation rule, duplicate detection, quality reports;
-- cleaning and excluded-row behavior;
-- exact synthetic regressions with known slope/intercept, residual standard
-  errors, skipped short groups and experiment comparisons;
-- database persistence, raw-row retention, idempotent imports, regression
-  round-trips, import history;
-- report/plot generation and the end-to-end CLI.
+```text
+47 passed
+```
 
-Synthetic test data uses known mathematical relationships, not claimed
-experimental results.
+Die Tests decken ab:
 
-## Project structure
+- CSV-Parsing, Pflichtspalten, doppelte Kopfzeilen, mehrere Dateien und Checksums,
+- sämtliche Validierungsregeln, Duplikaterkennung und Quality Reports,
+- Cleaning und Ausschluss ungültiger Zeilen,
+- exakte synthetische Regressionen mit bekannten Steigungen, Achsenabschnitten
+  und Standardfehlern,
+- Datenbankpersistenz, Rohdatenhaltung, idempotente Importe und Regression-Roundtrips,
+- Plot-/Report-Erzeugung und den vollständigen CLI-Durchlauf.
+
+Die automatisierten Datenbanktests verwenden eine SQLite-In-Memory-Datenbank, damit
+sie schnell und portabel sind. Derselbe SQLAlchemy-Code und der vollständige
+Workflow wurden zusätzlich gegen PostgreSQL 16 in Docker geprüft.
+
+## Projektstruktur
 
 ```text
 experimental-data-tool/
 ├── data/
-│   ├── raw/                    # input CSVs (read-only to the app)
-│   └── processed/              # cleaned measurement CSV
+│   ├── raw/                    # Eingabe-CSVs (werden nie verändert)
+│   └── processed/              # bereinigte Messwerte
+├── docs/
+│   └── images/                 # Banner und Screenshots für dieses README
 ├── output/
-│   ├── plots/                  # PNG figures
-│   └── reports/                # CSV tables and summary.md
+│   ├── plots/                  # PNG-Abbildungen
+│   └── reports/                # CSV-Tabellen und summary.md
 ├── sql/
-│   ├── schema.sql              # reference PostgreSQL schema
-│   └── queries/                # analytical SQL
+│   ├── schema.sql              # PostgreSQL-Referenzschema
+│   └── queries/                # analytische SQL-Abfragen
 ├── src/
-│   ├── ingestion.py            # CSV discovery/reading, checksums
-│   ├── validation.py           # row-level checks and quality report
-│   ├── cleaning.py             # selection of typed valid rows
-│   ├── analysis.py             # descriptive stats and OLS regression
-│   ├── database.py             # SQLAlchemy models and persistence
-│   ├── reports.py              # Matplotlib and CSV/Markdown output
-│   ├── config.py               # paths and default database URL
-│   └── main.py                 # command-line interface
+│   ├── ingestion.py            # CSV-Erkennung, Lesen, Checksums
+│   ├── validation.py           # Zeilenprüfung und Quality Report
+│   ├── cleaning.py             # Auswahl typisierter gültiger Zeilen
+│   ├── analysis.py             # Deskriptive Statistik und OLS
+│   ├── database.py             # SQLAlchemy-Modelle und Persistenz
+│   ├── reports.py              # Matplotlib, CSV und Markdown
+│   ├── config.py               # Pfade und Standard-Datenbank-URL
+│   └── main.py                 # Kommandozeilen-Schnittstelle
 ├── tests/
-├── docker-compose.yml          # PostgreSQL only
+├── docker-compose.yml          # ausschließlich PostgreSQL
 ├── requirements.txt
 ├── pytest.ini
 ├── .env.example
@@ -334,65 +505,79 @@ experimental-data-tool/
 └── README.md
 ```
 
-## Design decisions and limitations
+## Entwurfsentscheidungen
 
-- **No FastAPI/React/Airflow/etc.** The required workflow is a batch CLI; a web
-  UI or scheduler would add operational cost without helping a small lab.
-- **One command, one database container.** The Python app runs in a virtual
-  environment; only PostgreSQL is containerized.
-- **No silent deletion.** Rejected rows are visible in both the database and the
-  reports.
-- **No invented physical meaning.** The default ranges are QA limits, not
-  constants of nature. Change them for your apparatus.
-- **No uncertainty propagation.** The CSV format has no uncertainty column, so
-  the fit is unweighted OLS.
-- **No significance tests between experiments.** The comparison is descriptive;
-  adding formal tests would require a stated statistical design.
-- **Schema changes require care.** `create_all` does not migrate existing
-  tables. Introduce Alembic if the schema must evolve with retained real data.
+- **Keine Web-App, kein Dashboard.** Der geforderte Workflow ist ein Batch-Lauf.
+  Ein Browser-Frontend würde Betriebsaufwand erzeugen, ohne die tägliche Arbeit
+  zu verbessern.
+- **Nur PostgreSQL läuft in Docker.** Die Python-Anwendung bleibt lokal in einer
+  virtuellen Umgebung.
+- **Keine stillen Löschungen.** Abgelehnte Zeilen sind in Datenbank und Bericht
+  sichtbar.
+- **Keine erfundene physikalische Bedeutung.** Die Standardbereiche sind
+  Qualitätsgrenzen, keine Naturkonstanten.
+- **Keine Unsicherheitsfortpflanzung.** Ohne Unsicherheitsspalte im CSV ist eine
+  ungewichtete OLS die ehrliche Wahl.
+- **Keine Signifikanztests zwischen Experimenten.** Der Vergleich bleibt
+  deskriptiv, solange kein statistisches Design festgelegt ist.
+- **Schemaänderungen brauchen Sorgfalt.** `create_all` migriert keine bestehenden
+  Tabellen. Bei echten Daten mit Schemaänderungen sollte Alembic ergänzt werden.
 
-## Troubleshooting
+## Fehlerbehebung
 
-**`DATABASE ERROR: connection ... refused`**
-
-Start the database and wait for its health check:
+<details>
+<summary><strong>Datenbankverbindung wird abgelehnt</strong></summary>
 
 ```bash
 docker compose up -d db
 docker compose ps
 ```
 
-**Port 5434 is already in use**
+Warten, bis der Healthcheck erfolgreich ist, dann erneut ausführen.
+</details>
 
-Change the host port in `docker-compose.yml` and update `DATABASE_URL` or pass
-`--database-url`.
+<details>
+<summary><strong>Port 5434 ist bereits belegt</strong></summary>
 
-**`No CSV files found`**
+Host-Port in `docker-compose.yml` ändern und `DATABASE_URL` bzw.
+`--database-url` anpassen.
+</details>
 
-Put at least one `.csv` file in `data/raw` or pass `--input <directory>`.
+<details>
+<summary><strong>Keine CSV-Dateien gefunden</strong></summary>
 
-**`missing required column(s)`**
+Mindestens eine `.csv`-Datei in `data/raw` legen oder
+`--input <verzeichnis>` verwenden.
+</details>
 
-Check the header against the five required names above. Header names are
-case-sensitive.
+<details>
+<summary><strong>Pflichtspalte fehlt</strong></summary>
 
-**I want a clean database**
+Kopfzeile mit den fünf erforderlichen Spalten prüfen. Die Namen sind
+case-sensitiv.
+</details>
 
-This deletes the Docker volume and all stored measurements:
+<details>
+<summary><strong>Datenbank komplett zurücksetzen</strong></summary>
+
+Achtung, dies löscht das Docker-Volume und alle gespeicherten Messungen:
 
 ```bash
 docker compose down -v
 docker compose up -d db
 python -m src.main process
 ```
+</details>
 
-**Can I use this offline?**
+---
 
-Yes, for validation and local reports:
+<div align="center">
 
-```bash
-python -m src.main process --skip-db
-```
+**Experimental Data Processing**
 
-The PostgreSQL step is skipped, so only local CSV/PNG/Markdown outputs are
-produced.
+Entwickelt für ein kleines universitäres Forschungsteam.
+Kein Enterprise-Stack – nur Python, PostgreSQL und reproduzierbare Ergebnisse.
+
+<sub>Repository: <a href="https://github.com/dgoo24/Experimental-Data-Processing">dgoo24/Experimental-Data-Processing</a></sub>
+
+</div>

@@ -1,16 +1,18 @@
-# Raw input data
+# Rohe Eingabedaten
 
-Place one or more measurement CSV files in this directory, then run:
+Lege eine oder mehrere Messdateien im CSV-Format in dieses Verzeichnis und führe
+anschließend aus:
 
 ```bash
 python -m src.main process
 ```
 
-Files are read-only to the application. Nothing here is edited or deleted.
+Die Anwendung liest die Dateien nur. Nichts in diesem Verzeichnis wird verändert
+oder gelöscht.
 
-The two CSV files currently in this directory are **synthetic example data**
-generated for demonstration and testing. They are not real laboratory
-measurements. Replace or remove them before using the tool with experimental
-data.
+Die beiden CSV-Dateien in diesem Ordner sind **synthetische Beispieldaten** für
+Demonstration und Tests. Sie sind keine echten Labormessungen. Vor dem Einsatz
+mit Forschungsdaten ersetzen oder entfernen.
 
-Required columns and units are documented in the project README.
+Das erforderliche Spaltenformat, die Einheiten und die Annahmen sind im
+Haupt-README dokumentiert.
