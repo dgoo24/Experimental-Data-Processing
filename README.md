@@ -145,6 +145,9 @@ of three statuses:
   unparseable timestamp, or over-long identifier;
 - `duplicate` - same experiment/sample/angle/timestamp as an earlier row.
 
+If a row is both a duplicate and otherwise invalid, it is marked `invalid`; the
+duplicate flag is still recorded in the quality report.
+
 Default acceptance ranges (configurable from the command line):
 
 | Quantity | Default range |
