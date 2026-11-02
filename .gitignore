@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local configuration
+.env
+
+# Database files / generated data
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated artifacts (recreate with `python -m src.main process`)
+data/processed/*.csv
+output/plots/*.png
+output/reports/*
+
+# Keep the directory placeholders
+!data/processed/.gitkeep
+!output/plots/.gitkeep
+!output/reports/.gitkeep
