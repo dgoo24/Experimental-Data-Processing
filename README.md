@@ -232,6 +232,23 @@ Streamlit Community Cloud ist `streamlit_app.py`; die eigentliche App bleibt
 Die mitgelieferten CSVs sind synthetische Beispieldaten; das Dashboard weist
 darauf sichtbar hin.
 
+### Streamlit Community Cloud
+
+Für eine öffentliche Demo kann das Repository direkt in
+[Streamlit Community Cloud](https://share.streamlit.io/) verbunden werden:
+
+| Einstellung | Wert |
+| --- | --- |
+| Repository | `dgoo24/Experimental-Data-Processing` |
+| Branch | `main` |
+| Main file path | `streamlit_app.py` |
+| Python version | 3.11 oder neuer |
+
+Die Cloud-Instanz hat keinen Zugriff auf die lokale PostgreSQL-Datenbank. Sie
+nutzt deshalb automatisch die Demo-Artefakte aus `data/demo` und zeigt einen
+entsprechenden Hinweis. Eigene Daten werden weiterhin lokal mit
+`python -m src.main process` verarbeitet.
+
 ## CSV-Format
 
 Jede Datei muss UTF-8-kodiert sein, eine Kopfzeile besitzen und die folgenden
