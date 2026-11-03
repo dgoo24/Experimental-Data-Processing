@@ -1,0 +1,48 @@
+# Dark theme matching the project banner (docs/images/banner.svg).
+# Streamlit reads this file automatically when running from the project root.
+
+[theme]
+base = "dark"
+primaryColor = "#38bdf8"
+backgroundColor = "#08111f"
+secondaryBackgroundColor = "#0d1b2e"
+textColor = "#e6edf7"
+borderColor = "#1e3a5f"
+linkColor = "#7dd3fc"
+codeBackgroundColor = "#0d1b2e"
+dataframeHeaderBackgroundColor = "#102a43"
+dataframeHeaderTextColor = "#e6edf7"
+dataframeBorderColor = "#1e3a5f"
+chartCategoricalColors = [
+  "#38bdf8",
+  "#818cf8",
+  "#34d399",
+  "#fbbf24",
+  "#f472b6",
+  "#a78bfa",
+  "#f87171",
+  "#2dd4bf",
+]
+font = "sans-serif"
+baseRadius = "0.6rem"
+buttonRadius = "0.5rem"
+showWidgetBorder = true
+showSidebarBorder = true
+paddingTop = "1.5rem"
+paddingBottom = "2rem"
+metricValueFontSize = "2rem"
+metricValueFontWeight = 700
+headingFontSizes = ["2.25rem", "1.5rem", "1.25rem", "1.1rem", "1rem", "0.9rem"]
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+
+[theme.sidebar]
+backgroundColor = "#0a1729"
+secondaryBackgroundColor = "#0d1b2e"
+borderColor = "#1e3a5f"
+textColor = "#e6edf7"
+primaryColor = "#38bdf8"
+linkColor = "#7dd3fc"
+paddingTop = "1rem"
+
+[browser]
+gatherUsageStats = false

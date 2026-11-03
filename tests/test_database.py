@@ -20,6 +20,7 @@ from src.database import (
     database_summary,
     fetch_import_history,
     fetch_measurements,
+    fetch_quality_issues,
     fetch_regression_results,
     persist_dataset,
     store_regression_results,
@@ -85,6 +86,37 @@ def test_invalid_rows_are_retained_in_raw_table(sqlite_engine, make_raw):
         ).all()
         assert raw_statuses == ["valid", "invalid"]
         assert session.scalar(select(ProcessedMeasurement).limit(1)) is not None
+
+
+def test_quality_issues_return_retained_invalid_rows(sqlite_engine, make_raw):
+    raw = make_raw(
+        [
+            {
+                "experiment_id": "E1",
+                "sample_id": "S1",
+                "measurement_angle": "0",
+                "observed_rotation": "1",
+                "measurement_timestamp": "2026-01-01T00:00:00Z",
+            },
+            {
+                "experiment_id": "E1",
+                "sample_id": "S1",
+                "measurement_angle": "999",
+                "observed_rotation": "1",
+                "measurement_timestamp": "2026-01-01T00:01:00Z",
+            },
+        ]
+    )
+    validated = validate_measurements(raw)
+    sources = [_source("test.csv", "9" * 64, len(validated))]
+    persist_dataset(sqlite_engine, validated, sources)
+
+    issues = fetch_quality_issues(sqlite_engine)
+
+    assert issues["status"].tolist() == ["invalid"]
+    assert issues.loc[0, "source_file"] == "test.csv"
+    assert issues.loc[0, "source_row"] == 3
+    assert "measurement_angle" in issues.loc[0, "validation_errors"]
 
 
 def test_same_file_hash_is_skipped(sqlite_engine, validated_frame):

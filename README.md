@@ -42,9 +42,11 @@ mit einem einzigen Befehl.
 ## Überblick
 
 Dieses Projekt ist bewusst als **kleines internes Werkzeug** geschnitten – nicht
-als Plattform. Es gibt keine Weboberfläche, keinen Scheduler, keine Microservices
-und keine zusätzliche Infrastruktur. Ein Forschungsteam kann Messdateien in einen
-Ordner legen, einen Befehl ausführen und erhält nachvollziehbare Ergebnisse.
+als Plattform. Es gibt keinen Scheduler, keine Microservices und keine zusätzliche
+Infrastruktur. Ein Forschungsteam kann Messdateien in einen Ordner legen, einen
+Befehl ausführen und erhält nachvollziehbare Ergebnisse. Ein optionales,
+**rein lesendes Dashboard** macht dieselben Ergebnisse zusätzlich im Browser
+erkundbar.
 
 | Eigenschaft | Umsetzung |
 | --- | --- |
@@ -53,8 +55,8 @@ Ordner legen, einen Befehl ausführen und erhält nachvollziehbare Ergebnisse.
 | Speicherung | PostgreSQL mit Roh-, Prozess- und Regressionsdaten |
 | Analyse | Deskriptive Statistik und OLS-Regression mit SciPy/NumPy |
 | Ausgabe | PNG-Plots, CSV-Tabellen, `summary.md` |
-| Schnittstelle | Kommandozeile (CLI) |
-| Tests | 47 pytest-Tests, inklusive synthetischer Regressionen mit bekannten Ergebnissen |
+| Schnittstelle | Kommandozeile (CLI) und optionales Streamlit-Dashboard |
+| Tests | 67 pytest-Tests, inklusive synthetischer Regressionen mit bekannten Ergebnissen |
 | Betrieb | Python lokal, PostgreSQL ausschließlich per Docker Compose |
 
 ## Workflow
@@ -69,12 +71,15 @@ flowchart LR
     D --> F[Statistik<br/>OLS-Regression]
     E --> G[Historie / SQL]
     F --> H[PNG-Plots<br/>CSV-Tabellen<br/>summary.md]
+    E --> I[Streamlit-Dashboard<br/>nur lesend]
+    H --> I
 
     style A fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
     style C fill:#1e293b,stroke:#64748b,color:#e2e8f0
     style Q fill:#451a03,stroke:#f59e0b,color:#fef3c7
     style E fill:#172554,stroke:#4169e1,color:#dbeafe
     style H fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style I fill:#3b0764,stroke:#a78bfa,color:#f3e8ff
 ```
 
 ## Funktionen
@@ -91,6 +96,9 @@ flowchart LR
 - **Deskriptiver Experimentvergleich** ohne voreilige Signifikanzaussagen.
 - **Automatische Berichte** als PNG, CSV und Markdown.
 - **Historie und SQL-Zugriff** auf alle gespeicherten Ergebnisse.
+- **Optionales Dashboard:** interaktive Filter, Regressionsgeraden, Residuen,
+  Datenqualität und CSV-Download – wahlweise aus PostgreSQL oder aus den
+  lokalen Berichtsdateien.
 
 ## Screenshots
 
@@ -169,12 +177,60 @@ python -m src.main process --input "C:\Messdaten\Polarisation"
 python -m src.main history
 python -m src.main history --experiment EXP-001
 
+# Dashboard starten (http://localhost:8501)
+python -m src.main dashboard
+
 # Tests ausführen
 python -m pytest
 
 # PostgreSQL stoppen; das Docker-Volume bleibt erhalten
 docker compose down
 ```
+
+## Dashboard
+
+Das Dashboard ist optional und **nur lesend**. Es verändert weder Datenbank noch
+Dateien; neue Ergebnisse entstehen weiterhin über `python -m src.main process`.
+
+```bash
+python -m src.main dashboard
+```
+
+Alternativ lässt es sich direkt starten:
+
+```bash
+streamlit run src/dashboard.py
+```
+
+Danach ist die Oberfläche unter <http://localhost:8501> erreichbar. Das Design
+kommt aus `.streamlit/config.toml` und übernimmt die Farben des Projektbanners.
+
+| Ansicht | Inhalt |
+| --- | --- |
+| Übersicht | Streudiagramm mit Regressionsgeraden, Histogramm, Experimentvergleich |
+| Regressionen | Tabelle mit Gleichung, Steigung, R² und Standardfehlern, Residuenplot |
+| Datenqualität | Qualität je Quelldatei, abgewiesene Zeilen mit Begründung, Importverlauf |
+| Messwerte | gefilterte Tabelle, deskriptive Statistik und CSV-Download |
+
+Die Seitenleiste filtert nach Experiment, Probe und Messwinkel. Als Datenquelle
+stehen `Automatisch`, `PostgreSQL` und `Lokale Dateien` zur Wahl:
+
+- **Automatisch** versucht zuerst PostgreSQL und fällt bei fehlender Verbindung
+  auf `data/processed` und `output/reports` zurück.
+- **PostgreSQL** zeigt die gespeicherten Roh-, Prozess- und Regressionsdaten
+  inklusive Importverlauf und abgewiesener Zeilen.
+- **Lokale Dateien** liest die Artefakte des letzten `process`-Laufs und
+  funktioniert auch ohne laufenden Docker-Container.
+
+Für eine frische Installation – etwa auf Streamlit Community Cloud – liegen
+unter `data/demo` kleine, synthetische Beispielartefakte. Fehlen
+`data/processed` und `output/reports`, greift das Dashboard automatisch darauf
+zurück und zeigt einen entsprechenden Hinweis an. Der Einstiegspunkt für
+Streamlit Community Cloud ist `streamlit_app.py`; die eigentliche App bleibt
+`src/dashboard.py`.
+
+Die mitgelieferten CSVs sind synthetische Beispieldaten; das Dashboard weist
+darauf sichtbar hin.
 
 ## CSV-Format
 
@@ -403,6 +459,8 @@ trotzdem geschrieben; Plots werden übersprungen.
 | `python -m src.main process --output <dir>` | Anderes Ausgabeverzeichnis verwenden |
 | `python -m src.main history` | Gespeicherte Messungen und Regressionen anzeigen |
 | `python -m src.main history --experiment EXP-001` | Historie auf ein Experiment begrenzen |
+| `python -m src.main dashboard` | Dieses Dashboard auf Port 8501 starten |
+| `python -m src.main dashboard --port 8502` | Dashboard auf einem anderen Port starten |
 | `python -m src.main process --angle-min ...` | Qualitätsgrenzen anpassen |
 
 Die Standard-Datenbank-URL lautet:
@@ -455,7 +513,7 @@ python -m pytest
 Aktueller Stand:
 
 ```text
-47 passed
+67 passed
 ```
 
 Die Tests decken ab:
@@ -466,7 +524,10 @@ Die Tests decken ab:
 - exakte synthetische Regressionen mit bekannten Steigungen, Achsenabschnitten
   und Standardfehlern,
 - Datenbankpersistenz, Rohdatenhaltung, idempotente Importe und Regression-Roundtrips,
-- Plot-/Report-Erzeugung und den vollständigen CLI-Durchlauf.
+- Plot-/Report-Erzeugung und den vollständigen CLI-Durchlauf,
+- Dashboard-Datenzugriff, Filter, Residuen, Datenquellen-Fallback,
+  Demo-Daten sowie abgewiesene Zeilen aus PostgreSQL,
+- alle vier Dashboard-Ansichten über den Streamlit-`AppTest`-Runner.
 
 Die automatisierten Datenbanktests verwenden eine SQLite-In-Memory-Datenbank, damit
 sie schnell und portabel sind. Derselbe SQLAlchemy-Code und der vollständige
@@ -478,7 +539,8 @@ Workflow wurden zusätzlich gegen PostgreSQL 16 in Docker geprüft.
 experimental-data-tool/
 ├── data/
 │   ├── raw/                    # Eingabe-CSVs (werden nie verändert)
-│   └── processed/              # bereinigte Messwerte
+│   ├── processed/              # bereinigte Messwerte
+│   └── demo/                   # synthetische Demo-Artefakte für die Cloud
 ├── docs/
 │   └── images/                 # Banner und Screenshots für dieses README
 ├── output/
@@ -494,9 +556,14 @@ experimental-data-tool/
 │   ├── analysis.py             # Deskriptive Statistik und OLS
 │   ├── database.py             # SQLAlchemy-Modelle und Persistenz
 │   ├── reports.py              # Matplotlib, CSV und Markdown
+│   ├── dashboard.py            # Streamlit-Oberfläche (nur lesend)
+│   ├── dashboard_data.py       # Datenzugriff und Filter ohne Streamlit-Abhängigkeit
 │   ├── config.py               # Pfade und Standard-Datenbank-URL
 │   └── main.py                 # Kommandozeilen-Schnittstelle
 ├── tests/
+├── .streamlit/
+│   └── config.toml             # Dark Theme und Browser-Einstellungen
+├── streamlit_app.py            # Einstiegspunkt für Streamlit Community Cloud
 ├── docker-compose.yml          # ausschließlich PostgreSQL
 ├── requirements.txt
 ├── pytest.ini
@@ -507,9 +574,10 @@ experimental-data-tool/
 
 ## Entwurfsentscheidungen
 
-- **Keine Web-App, kein Dashboard.** Der geforderte Workflow ist ein Batch-Lauf.
-  Ein Browser-Frontend würde Betriebsaufwand erzeugen, ohne die tägliche Arbeit
-  zu verbessern.
+- **Batch zuerst, Dashboard optional.** Der reproduzierbare Kern bleibt ein
+  CLI-Lauf. Das Streamlit-Dashboard ist eine rein lesende Zusatzansicht ohne
+  eigenen Zustand, ohne Schreibzugriff und ohne zusätzliche Infrastruktur; es
+  kann jederzeit weggelassen werden.
 - **Nur PostgreSQL läuft in Docker.** Die Python-Anwendung bleibt lokal in einer
   virtuellen Umgebung.
 - **Keine stillen Löschungen.** Abgelehnte Zeilen sind in Datenbank und Bericht
@@ -555,6 +623,23 @@ Mindestens eine `.csv`-Datei in `data/raw` legen oder
 
 Kopfzeile mit den fünf erforderlichen Spalten prüfen. Die Namen sind
 case-sensitiv.
+</details>
+
+<details>
+<summary><strong>Dashboard zeigt keine Daten</strong></summary>
+
+Entweder zuerst `python -m src.main process` ausführen oder im Dashboard unter
+`Datenquelle` die Option `Lokale Dateien` wählen. Mit `Automatisch` erscheint bei
+nicht erreichbarer Datenbank ein Hinweis und das Dashboard nutzt die lokalen
+Dateien als Rückfallebene.
+</details>
+
+<details>
+<summary><strong>Port 8501 ist bereits belegt</strong></summary>
+
+```bash
+python -m src.main dashboard --port 8502
+```
 </details>
 
 <details>

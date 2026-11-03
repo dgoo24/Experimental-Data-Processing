@@ -623,6 +623,44 @@ def fetch_import_history(engine: Engine) -> pd.DataFrame:
     )
 
 
+def fetch_quality_issues(engine: Engine) -> pd.DataFrame:
+    """Return retained raw rows that are invalid or duplicates."""
+    statement = (
+        select(
+            ImportRecord.source_file,
+            RawMeasurement.source_row,
+            RawMeasurement.status,
+            RawMeasurement.experiment_id,
+            RawMeasurement.sample_id,
+            RawMeasurement.measurement_angle,
+            RawMeasurement.observed_rotation,
+            RawMeasurement.measurement_timestamp,
+            RawMeasurement.validation_errors,
+        )
+        .join(ImportRecord, ImportRecord.id == RawMeasurement.import_id)
+        .where(RawMeasurement.status != STATUS_VALID)
+        .order_by(ImportRecord.id, RawMeasurement.source_row)
+    )
+
+    with engine.connect() as connection:
+        rows = connection.execute(statement).all()
+
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "source_file",
+            "source_row",
+            "status",
+            "experiment_id",
+            "sample_id",
+            "measurement_angle",
+            "observed_rotation",
+            "measurement_timestamp",
+            "validation_errors",
+        ],
+    )
+
+
 def database_summary(engine: Engine) -> dict[str, int]:
     """Return row counts for the main tables."""
     with Session(engine) as session:

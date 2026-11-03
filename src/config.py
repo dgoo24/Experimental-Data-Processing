@@ -14,6 +14,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATA_RAW_DIR = PROJECT_ROOT / "data" / "raw"
 DATA_PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+DEMO_DATA_DIR = PROJECT_ROOT / "data" / "demo"
+DEMO_PROCESSED_PATH = DEMO_DATA_DIR / "processed_measurements.csv"
+DEMO_REPORTS_DIR = DEMO_DATA_DIR / "reports"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 PLOTS_DIR = OUTPUT_DIR / "plots"
 REPORTS_DIR = OUTPUT_DIR / "reports"

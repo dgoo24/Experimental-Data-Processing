@@ -1,0 +1,4 @@
+source_file,total_rows,valid_rows,invalid_rows,duplicate_rows,rejected_rows,missing_required_rows,non_numeric_rows,out_of_range_rows,invalid_timestamp_rows,invalid_id_rows,duplicate_measurement_rows
+batch_02.csv,10,10,0,0,0,0,0,0,0,0,0
+measurements.csv,20,20,0,0,0,0,0,0,0,0,0
+ALL,30,30,0,0,0,0,0,0,0,0,0

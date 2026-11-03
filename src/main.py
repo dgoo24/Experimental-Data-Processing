@@ -6,6 +6,7 @@ Examples
     python -m src.main process
     python -m src.main process --skip-db
     python -m src.main history --experiment EXP-001
+    python -m src.main dashboard
 """
 
 from __future__ import annotations
@@ -131,6 +132,17 @@ def _build_parser() -> argparse.ArgumentParser:
         "--experiment",
         default=None,
         help="Restrict measurement and regression output to one experiment_id.",
+    )
+
+    dashboard_parser = subparsers.add_parser(
+        "dashboard",
+        help="Start the optional Streamlit dashboard (read-only).",
+    )
+    dashboard_parser.add_argument(
+        "--port",
+        type=int,
+        default=8501,
+        help="Port for the local Streamlit server (default: 8501).",
     )
 
     return parser
@@ -317,6 +329,33 @@ def _run_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_dashboard(args: argparse.Namespace) -> int:
+    """Launch the optional Streamlit app with the current interpreter."""
+    try:
+        import streamlit  # noqa: F401
+    except ImportError:
+        print("Streamlit is not installed.")
+        print("Install the dashboard dependencies with: pip install -r requirements.txt")
+        return 1
+
+    import subprocess
+
+    app_path = Path(__file__).with_name("dashboard.py")
+    print(f"Starting dashboard on http://localhost:{args.port}")
+    print("Press Ctrl+C to stop it.")
+    return subprocess.call(
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(app_path),
+            "--server.port",
+            str(args.port),
+        ]
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     pd.set_option("display.max_columns", 50)
     pd.set_option("display.width", 200)
@@ -330,6 +369,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_process(args)
     if args.command == "history":
         return _run_history(args)
+    if args.command == "dashboard":
+        return _run_dashboard(args)
 
     parser.print_help()
     return 2
