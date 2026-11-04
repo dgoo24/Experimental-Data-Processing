@@ -25,3 +25,9 @@ DEFAULT_DATABASE_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql+psycopg://lab_user:lab_password@127.0.0.1:5434/experimental_data",
 )
+
+# Seconds to wait for a TCP/connection handshake with PostgreSQL.  Without a
+# limit a closed or filtered port blocks the dashboard for minutes (Streamlit
+# Community Cloud has no database at all), so keep the fallback to the local
+# files fast.  libpq treats values below 2 as 2 seconds.
+DB_CONNECT_TIMEOUT = int(os.environ.get("DB_CONNECT_TIMEOUT", "3"))

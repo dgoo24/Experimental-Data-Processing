@@ -36,7 +36,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.pool import StaticPool
 
-from .config import DEFAULT_DATABASE_URL
+from .config import DB_CONNECT_TIMEOUT, DEFAULT_DATABASE_URL
 from .ingestion import SourceFile
 from .validation import STATUS_DUPLICATE, STATUS_INVALID, STATUS_VALID
 
@@ -189,8 +189,17 @@ class RegressionStoreResult:
     skipped: list[dict[str, object]]
 
 
-def get_engine(database_url: str | None = None, echo: bool = False) -> Engine:
-    """Create an engine for PostgreSQL (default) or SQLite (tests/offline use)."""
+def get_engine(
+    database_url: str | None = None,
+    echo: bool = False,
+    connect_timeout: int | None = None,
+) -> Engine:
+    """Create an engine for PostgreSQL (default) or SQLite (tests/offline use).
+
+    PostgreSQL connections use a short connect timeout (``DB_CONNECT_TIMEOUT``,
+    default 3 s) so an unreachable server fails fast instead of blocking the
+    caller - and with it the Streamlit script - for minutes.
+    """
     url = database_url or DEFAULT_DATABASE_URL
     options: dict[str, object] = {"echo": echo}
 
@@ -198,6 +207,8 @@ def get_engine(database_url: str | None = None, echo: bool = False) -> Engine:
         options["connect_args"] = {"check_same_thread": False}
         if ":memory:" in url:
             options["poolclass"] = StaticPool
+    else:
+        options["connect_args"] = {"connect_timeout": connect_timeout or DB_CONNECT_TIMEOUT}
 
     engine = create_engine(url, **options)
 

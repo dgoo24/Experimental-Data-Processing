@@ -487,7 +487,9 @@ postgresql+psycopg://lab_user:lab_password@127.0.0.1:5434/experimental_data
 ```
 
 Sie kann über `--database-url` oder die Umgebungsvariable `DATABASE_URL`
-überschrieben werden.
+überschrieben werden. `DB_CONNECT_TIMEOUT` (Standard: `3` Sekunden) begrenzt,
+wie lange auf einen Verbindungsaufbau gewartet wird; ohne dieses Limit blockiert
+ein nicht erreichbarer Server das Dashboard mehrere Minuten lang.
 
 ## SQL-Abfragen
 

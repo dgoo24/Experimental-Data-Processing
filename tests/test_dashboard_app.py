@@ -85,3 +85,33 @@ def test_dashboard_renders_every_view(monkeypatch) -> None:
     for view in views.options:
         views.set_value(view).run()
         assert not app.exception, view
+
+
+def test_cloud_entry_point_keeps_rendering_after_rerun(monkeypatch) -> None:
+    """Streamlit re-executes the entry point on every interaction.
+
+    The entry point used by Streamlit Community Cloud must therefore render the
+    dashboard on every rerun; a plain ``import`` only renders the first time and
+    leaves a blank page afterwards.
+    """
+    monkeypatch.setattr(
+        dashboard_data, "load_dashboard_data", lambda **kwargs: _data()
+    )
+
+    app_path = Path(__file__).resolve().parent.parent / "streamlit_app.py"
+    app = AppTest.from_file(app_path, default_timeout=60)
+
+    app.run()
+    assert not app.exception
+    assert len(app.metric) == 6
+
+    app.run()
+    assert not app.exception
+    assert [(metric.label, metric.value) for metric in app.metric] == [
+        ("Messungen", "4"),
+        ("Experimente", "2"),
+        ("Proben", "2"),
+        ("Regressionen", "2"),
+        ("Mittleres R²", "1.0000"),
+        ("Abgewiesene Zeilen", "0"),
+    ]
