@@ -29,15 +29,8 @@ mit einem einzigen Befehl.
 
 ---
 
-> **Kurz gesagt:** Das Programm liest alle CSV-Dateien aus `data/raw`, prüft und
-> bereinigt die Messwerte, speichert Roh- und Prozessdaten in PostgreSQL, führt
-> pro Experiment/Probe eine lineare Regression durch und erzeugt PNG-Plots,
-> CSV-Tabellen sowie einen lesbaren Markdown-Bericht.
-
 > [!IMPORTANT]
-> Die mitgelieferten CSV-Dateien in `data/raw` und die Screenshots in diesem
-> README stammen aus **synthetischen Beispieldaten**. Sie sind keine echten
-> Labormessungen. Vor dem Einsatz mit Forschungsdaten müssen sie ersetzt werden.
+> Die Daten wurden simuliert, um die tatsächlichen Daten zu schützen, die an der Universität verwendet werden.
 
 ## Überblick
 
